@@ -45,10 +45,8 @@ protected:
 class Expr : public Symbole
 {
 public:
-   Expr(int v) : Symbole(EXPR), valeur(v) {}
-   int getValeur() const { return valeur; }
-   void Affiche() override { cout << valeur; }
-
-private:
-   int valeur;
+   Expr() : Symbole(EXPR) {}
+   virtual ~Expr() {}
+   virtual double eval(const double // Ou string ?
+                           &valeurs) = 0;
 };
