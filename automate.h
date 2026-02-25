@@ -14,6 +14,7 @@ class Automate {
     std::vector<Symbole *> symbolstack;
     std::vector<Etat *> statestack;
     Lexer *lexer;
+    bool fini;
 
   public:
     Automate(std::string chaine);
@@ -22,6 +23,7 @@ class Automate {
     void execution();
     void decalage(Symbole * s, Etat * e);
     void reduction(int n, Symbole * s);
+    void transitionsimple(Symbole * s, Etat * e);
     
     // Pour l'évaluation finale
     void afficheResultat();

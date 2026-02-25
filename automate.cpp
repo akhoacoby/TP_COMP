@@ -1,74 +1,70 @@
 #include <algorithm>
+#include <iostream>
 #include "automate.h"
-#include "etat.h" // Assure-toi d'avoir ce fichier avec tes classes E0, E1...
+#include "etat.h"
 
 Automate::Automate(std::string chaine) {
-    lexer = new Lexer(chaine); [cite: 16]
-    // L'état initial est l'état 0
+    lexer = new Lexer(chaine); //
     statestack.push_back(new E0()); 
+    fini = false;
 }
 
 Automate::~Automate() {
-    while(!statestack.empty()) {
-        delete statestack.back();
-        statestack.pop_back();
-    }
-    while(!symbolstack.empty()) {
-        delete symbolstack.back();
-        symbolstack.pop_back();
-    }
+    while(!statestack.empty()) { delete statestack.back(); statestack.pop_back(); }
+    while(!symbolstack.empty()) { delete symbolstack.back(); symbolstack.pop_back(); }
     delete lexer;
 }
 
 void Automate::execution() {
-    bool fini = false;
     while(!fini) {
-        // On consulte le prochain symbole sans avancer la tête de lecture
-        Symbole * s = lexer->Consulter(); [cite: 15]
-        
-        // On délègue la décision à l'état au sommet de la pile
-        // La transition retourne 'true' si on doit continuer, 'false' si on accepte
+        Symbole * s = lexer->Consulter(); //
+        // On demande à l'état. S'il renvoie true, cela signifie "Accepter" (fin)
         if (statestack.back()->transition(*this, s)) {
-            fini = false; 
-        } else {
-            fini = true; // Cas "Accepter" de la table
+            fini = true;
         }
     }
-    std::cout << "Analyse terminée avec succès." << std::endl;
 }
 
+// Pour les Terminaux : On empile et on avance le Lexer
 void Automate::decalage(Symbole * s, Etat * e) {
     symbolstack.push_back(s);
     statestack.push_back(e);
-    lexer->Avancer(); // On avance réellement la tête de lecture 
+    lexer->Avancer(); //
+}
+
+// Pour les Non-Terminaux (EXPR) : On empile seulement
+void Automate::transitionsimple(Symbole * s, Etat * e) {
+    symbolstack.push_back(s);
+    statestack.push_back(e);
+    // Ici, pas de lexer->Avancer() !
 }
 
 void Automate::reduction(int n, Symbole * s) {
     std::vector<Symbole *> poped;
     
-    // On dépile n états et n symboles
+    // 1. On dépile n éléments selon la règle [cite: 6, 7, 8, 9]
     for(int i = 0; i < n; i++) {
         delete statestack.back();
         statestack.pop_back();
         poped.push_back(symbolstack.back());
         symbolstack.pop_back();
     }
-    
-    // On remet les symboles dans l'ordre de lecture (gauche à droite)
     std::reverse(poped.begin(), poped.end());
     
-    // Logique d'évaluation (E -> val ou E -> E+E)
-    // Ici, on crée un nouvel objet "Entier" ou "Expr" avec le résultat du calcul
-    Symbole * resultat;
-    if (n == 1) { 
-        // Cas E -> val [cite: 9]
-        resultat = poped[0]; 
+    // 2. Calcul (on utilise l'opérateur int() de symbole.h pour les valeurs)
+    int res = 0;
+    if (n == 1) { // E -> val [cite: 9]
+        res = (int)(*poped[0]); 
     } else if (n == 3) {
-        // Cas E -> E+E, E*E ou (E) [cite: 6, 7, 8]
-        // À implémenter selon ton schéma : new ExprPlus(poped[0], poped[2]), etc.
-        resultat = new Entier(0); // Placeholder
+        if ((int)(*poped[0]) == OPENPAR) res = (int)(*poped[1]); // E -> (E) [cite: 8]
+        else if ((int)(*poped[1]) == PLUS) res = (int)(*poped[0]) + (int)(*poped[2]); // E -> E+E [cite: 6]
+        else if ((int)(*poped[1]) == MULT) res = (int)(*poped[0]) * (int)(*poped[2]); // E -> E*E [cite: 7]
     }
 
-    // GOTO : On regarde l'état au sommet et on applique la transition pour le non-terminal E
-    statestack.back()->transition(*this, resultat);
+    // 3. On crée le nouveau symbole résultat (un Entier qui joue le rôle d'EXPR)
+    Symbole * s_res = new Entier(res); 
+    
+    // 4. On utilise transitionsimple pour le GOTO vers l'état suivant 
+    // On demande à l'état qui est maintenant au sommet de la pile
+    statestack.back()->transition(*this, s_res);
 }
