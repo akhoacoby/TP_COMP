@@ -11,7 +11,7 @@ bool E0::transition(Automate &automate, Symbole *s)
         automate.decalage(s, new E2);
         break;
     case EXPR:
-        // automate.transitionSimple(s, new E1);
+        automate.transitionSimple(s, new E1);
         break;
     default:
         cout << "Erreur de syntaxe" << endl;
@@ -31,7 +31,6 @@ bool E1::transition(Automate &automate, Symbole *s)
         automate.decalage(s, new E5);
         break;
     case FIN:
-        // automate.accepter();
         return true;
     default:
         cout << "Erreur de syntaxe" << endl;
@@ -68,7 +67,12 @@ bool E3::transition(Automate &automate, Symbole *s)
     case MULT:
     case CLOSEPAR:
     case FIN:
-        automate.reduction(1, s); // C'est pas vraiment ca
+        Entier *e = (Entier *)automate.popSymbol();
+        int v = e->getValeur();
+        automate.reduction(1, new Expr(v));
+
+        break;
+
     default:
         cout << "Erreur de syntaxe" << endl;
         break;
@@ -147,7 +151,11 @@ bool E7::transition(Automate &automate, Symbole *s)
     case PLUS:
     case CLOSEPAR:
     case FIN:
-        automate.reduction(reductionR2, s); // C'est pas vraiment ca
+        Expr *s1 = (Expr *)automate.popSymbol();
+        automate.popAndDestroySymbol();
+        Expr *s2 = (Expr *)automate.popSymbol();
+        int v = s1->getValeur() + s2->getValeur();
+        automate.reduction(3, new Expr(v));
         break;
     default:
         cout << "Erreur de syntaxe" << endl;
@@ -165,7 +173,11 @@ bool E8::transition(Automate &automate, Symbole *s)
     case MULT:
     case CLOSEPAR:
     case FIN:
-        automate.reduction(reductionR3, s); // C'est pas vraiment ca
+        Expr *s1 = (Expr *)automate.popSymbol();
+        automate.popAndDestroySymbol();
+        Expr *s2 = (Expr *)automate.popSymbol();
+        int v = s1->getValeur() * s2->getValeur();
+        automate.reduction(3, new Expr(v));
         break;
     default:
         cout << "Erreur de syntaxe" << endl;
@@ -176,16 +188,16 @@ bool E8::transition(Automate &automate, Symbole *s)
 
 bool E9::transition(Automate &automate, Symbole *s)
 {
-    int reductionR4 = 3; // je sais pas c'est combien ici, ca dépend je pense
     switch (*s)
     {
     case PLUS:
-        automate.reduction(reductionR4, s);
-        break;
     case MULT:
     case CLOSEPAR:
     case FIN:
-        automate.reduction(reductionR4, s); // C'est pas vraiment ca
+        automate.popAndDestroySymbol();
+        Expr *e = (Expr *)automate.popSymbol();
+        automate.popAndDestroySymbol();
+        automate.reduction(3, e);
         break;
     default:
         cout << "Erreur de syntaxe" << endl;
