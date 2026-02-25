@@ -10,3 +10,11 @@ void Entier::Affiche() {
    cout<<"("<<valeur<<")";
 }
 
+void Expression::Affiche() {
+   Symbole::Affiche();
+   cout<<"("<<valeur<<")";
+}
+
+int Expression::getValeur() {
+   return valeur;
+}
