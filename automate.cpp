@@ -25,6 +25,18 @@ void Automate::execution() {
     }
 }
 
+Symbole * Automate::popSymbol() {
+    Symbole * s = symbolstack.back();
+    symbolstack.pop_back();
+    return s;
+}
+
+void Automate::popAndDestroySymbol() {
+    Symbole * s = symbolstack.back();
+    symbolstack.pop_back();
+    delete s; // Libère la mémoire du symbole (utile pour les terminaux comme '+')
+}
+
 // Pour les Terminaux : On empile et on avance le Lexer
 void Automate::decalage(Symbole * s, Etat * e) {
     symbolstack.push_back(s);
